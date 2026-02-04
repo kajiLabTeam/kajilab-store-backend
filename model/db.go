@@ -66,9 +66,10 @@ type ProductLog struct {
 
 type User struct {
 	gorm.Model
-	Name    string
-	Debt    int64
-	Barcode string
+	Name             string
+	Debt             int64
+	Barcode          string
+	BalanceQrPayload string
 }
 
 type Tag struct {

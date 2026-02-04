@@ -1,6 +1,9 @@
 package service
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -13,6 +16,14 @@ import (
 )
 
 type UserService struct{}
+
+func HMACSHA256Short(message string) string {
+	secret := os.Getenv("HASH_KEY")
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(message))
+	full := hex.EncodeToString(mac.Sum(nil))
+	return full[:16]
+}
 
 // IDからユーザ情報取得
 func (UserService) GetUserById(id int64) (model.User, error) {
@@ -138,8 +149,8 @@ func (UserService) UpdateUser(id int64, user *model.User) error {
 		return result.Error
 	}
 
-	fmt.Println("ユーザIDは　" + strconv.Itoa(int(id)))
-	fmt.Println("ユーザ名は　" + user.Name)
+	// fmt.Println("ユーザIDは　" + strconv.Itoa(int(id)))
+	// fmt.Println("ユーザ名は　" + user.Name)
 
 	// ログに出力
 	go createCloudLog(user.Name + "(ID: " + strconv.Itoa(int(id)) + ")の残高\n" + "更新後：" + strconv.Itoa(int(user.Debt)))
@@ -302,4 +313,44 @@ func (UserService) GetKajilabpayLogsByUserId(offset int64, limit int64, userId i
 		return nil, result.Error
 	}
 	return logs, nil
+}
+
+// QRコードのPayloadを生成する
+func (UserService) CreateKajilabPayQR(barcode string) (model.User, error) {
+	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
+	if err != nil {
+		fmt.Println(err)
+		return model.User{}, err
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer sqlDB.Close()
+
+	// 現在のユーザ情報を取得
+	// user := model.User{}
+	// result := db.Where(&model.User{Barcode: barcode}).First(&user)
+	// if result.Error != nil {
+	// 	fmt.Printf("ユーザ取得失敗 %v", result.Error)
+	// 	return user, result.Error
+	// }
+
+	// バーコードからQRペイロードを生成
+	hashStr := HMACSHA256Short(barcode)
+
+	// ユーザ情報を更新
+	user := model.User{}
+	result := db.Model(&user).Where("barcode = ?", barcode).Update("balance_qr_payload", hashStr)
+	if result.Error != nil {
+		fmt.Printf("ユーザ情報更新失敗 %v", result.Error)
+		return model.User{}, result.Error
+	}
+
+	result = db.Where(&model.User{Barcode: barcode}).First(&user)
+	if result.Error != nil {
+		fmt.Printf("ユーザ取得失敗 %v", result.Error)
+		return user, result.Error
+	}
+	return user, nil
 }

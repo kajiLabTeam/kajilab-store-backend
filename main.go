@@ -83,6 +83,7 @@ func SetUpServer() *gin.Engine {
 		versionEngine.POST("/users", controller.CreateUser)
 		versionEngine.PUT("/users/debt", controller.UpdateUserDebt)
 		versionEngine.PUT("/users/barcode", controller.UpdateUserBarcode)
+		versionEngine.POST("/users/kajilabpayqr", controller.CreateKajilabPayQR)
 
 		// tags
 		versionEngine.GET("/tags", controller.GetTags)
@@ -106,7 +107,7 @@ func UpdateDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	db.AutoMigrate(&model.User{})
 	db.AutoMigrate(&model.Product{})
 	db.AutoMigrate(&model.Tag{})
 	db.AutoMigrate(&model.TagMap{})

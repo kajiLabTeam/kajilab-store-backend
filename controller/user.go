@@ -128,3 +128,28 @@ func UpdateUserBarcode(c *gin.Context) {
 
 	c.JSON(http.StatusOK, "success")
 }
+
+func CreateKajilabPayQR(c *gin.Context) {
+	UserService := service.UserService{}
+	KajilabPayQRRequest := model.PostKajilabpayqrRequest{}
+	err := c.Bind(&KajilabPayQRRequest)
+	if err != nil {
+		fmt.Println(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, "request is not correct")
+		return
+	}
+
+	user, err := UserService.CreateKajilabPayQR(KajilabPayQRRequest.Barcode)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "fetal update user")
+		return
+	}
+
+	resUser := model.PostKajilabpayqrResponse{
+		Barcode:          user.Barcode,
+		Name:             user.Name,
+		BalanceQRPayload: user.BalanceQrPayload,
+	}
+
+	c.JSON(http.StatusOK, resUser)
+}
