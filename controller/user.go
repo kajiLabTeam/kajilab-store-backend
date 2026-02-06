@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"kajilab-store-backend/model"
 	"kajilab-store-backend/service"
@@ -152,6 +153,31 @@ func UpdateUserBarcode(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, "success")
+}
+
+func GetUserByKajilabPayQR(c *gin.Context) {
+	UserService := service.UserService{}
+	qrPayload := c.Param("qrPayload")
+	// ユーザ情報を取得
+	user, err := UserService.GetUserByQRPayload(qrPayload)
+	if err != nil {
+		// 失敗した場合バーコードから取得．ただし，202年2月末作成分まで．
+		limitDate := time.Date(2026, 3, 1, 0, 0, 0, 0, time.Local)
+		user, err = UserService.GetUserByBarcodeBeforeCreated(qrPayload, limitDate)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "fetal get user by qrPayload")
+			return
+		}
+	}
+	// レスポンスの型に変換
+	userResponse := model.UserGetResponse{
+		Id:      int64(user.ID),
+		Name:    user.Name,
+		Debt:    user.Debt,
+		Barcode: user.Barcode,
+	}
+
+	c.JSON(http.StatusOK, userResponse)
 }
 
 func CreateKajilabPayQR(c *gin.Context) {

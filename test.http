@@ -1,6 +1,6 @@
-# @baseURL= http://localhost:8080
+@baseURL= http://localhost:8080
 # @baseURL= http://160.251.199.109:8080
-@baseURL=https://kjlbstore-backend.kajilab.dev
+# @baseURL=https://kjlbstore-backend.kajilab.dev
 
 ###
 Get {{baseURL}}/api/v1/products?limit=100&&offset=0&&updated_days=10
@@ -203,6 +203,9 @@ Content-Type: application/json
 
 ###a
 GET {{baseURL}}/api/v1/users/1080123456788
+
+###a
+GET {{baseURL}}/api/v1/users/kajilabpayqr/08452e33c88350d6
 
 ###
 POST {{baseURL}}/api/v1/users HTTP/1.1

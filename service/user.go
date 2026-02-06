@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"kajilab-store-backend/model"
 	"kajilab-store-backend/utils/qrutil"
@@ -54,6 +55,52 @@ func (UserService) GetUserByBarcode(barcode string) (model.User, error) {
 
 	// 取得
 	result := db.Where(&model.User{Barcode: barcode}).First(&user)
+	if result.Error != nil {
+		fmt.Printf("ユーザ取得失敗 %v", result.Error)
+		return user, result.Error
+	}
+	return user, nil
+}
+
+// バーコードからユーザ情報取得．ただし作成日がXX日以前．
+func (UserService) GetUserByBarcodeBeforeCreated(barcode string, limitDate time.Time) (model.User, error) {
+	user := model.User{}
+	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
+	if err != nil {
+		fmt.Println(err)
+		return user, err
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer sqlDB.Close()
+
+	// 取得
+	result := db.Where("barcode = ?", barcode).Where("created_at < ?", limitDate).First(&user)
+	if result.Error != nil {
+		fmt.Printf("ユーザ取得失敗 %v", result.Error)
+		return user, result.Error
+	}
+	return user, nil
+}
+
+// QRコードペイロードからユーザ情報取得
+func (UserService) GetUserByQRPayload(qrPayload string) (model.User, error) {
+	user := model.User{}
+	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
+	if err != nil {
+		fmt.Println(err)
+		return user, err
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer sqlDB.Close()
+
+	// 取得
+	result := db.Where(&model.User{BalanceQrPayload: qrPayload}).First(&user)
 	if result.Error != nil {
 		fmt.Printf("ユーザ取得失敗 %v", result.Error)
 		return user, result.Error

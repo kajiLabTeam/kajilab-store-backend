@@ -83,6 +83,7 @@ func SetUpServer() *gin.Engine {
 		versionEngine.POST("/users", controller.CreateUser)
 		versionEngine.PUT("/users/debt", controller.UpdateUserDebt)
 		versionEngine.PUT("/users/barcode", controller.UpdateUserBarcode)
+		versionEngine.GET("/users/kajilabpayqr/:qrPayload", controller.GetUserByKajilabPayQR)
 		versionEngine.POST("/users/kajilabpayqr", controller.CreateKajilabPayQR)
 
 		// tags
