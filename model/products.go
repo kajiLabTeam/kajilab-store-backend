@@ -136,11 +136,6 @@ type UserGetResponse struct {
 	Barcode string `json:"barcode"`
 }
 
-type UserCreateRequest struct {
-	Name    string `json:"name"`
-	Barcode string `json:"barcode"`
-}
-
 type UserUpdateDebtRequest struct {
 	Id   int64 `json:"id"`
 	Debt int64 `json:"debt"`

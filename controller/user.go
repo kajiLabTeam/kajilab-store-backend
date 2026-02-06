@@ -6,6 +6,7 @@ import (
 
 	"kajilab-store-backend/model"
 	"kajilab-store-backend/service"
+	"kajilab-store-backend/utils/qrutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,20 +42,44 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// バリデーション
+	if UserCreateRequest.Barcode == nil || len(*UserCreateRequest.Barcode) != 13 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "need 13 characters barcode")
+		return
+	}
+	if UserCreateRequest.Name == nil || *UserCreateRequest.Name == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "need name")
+		return
+	}
+
+	// 残高照会用QRコードのPayload生成
+	// バーコードからQRペイロードを生成
+	qrPayload := qrutil.HMACSHA256Short(*UserCreateRequest.Barcode)
+
 	// リクエストの商品情報をデータベースの型へ変換
 	user := model.User{
-		Name:    UserCreateRequest.Name,
-		Debt:    0,
-		Barcode: UserCreateRequest.Barcode,
+		Name:             *UserCreateRequest.Name,
+		Debt:             0,
+		Barcode:          *UserCreateRequest.Barcode,
+		BalanceQrPayload: qrPayload,
 	}
 
 	err = UserService.CreateUser(&user)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "fetal create product")
+		c.AbortWithStatusJSON(http.StatusBadRequest, "fetal create user")
 		return
 	}
 
-	c.JSON(http.StatusOK, "success")
+	// レスポンス用のデータ用意
+	resUser := model.UserCreateResponse{
+		Name:             *UserCreateRequest.Name,
+		Barcode:          *UserCreateRequest.Barcode,
+		BalanceQRPayload: qrPayload,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": resUser,
+	})
 }
 
 // ユーザの残高更新(主にチャージ)
@@ -139,7 +164,12 @@ func CreateKajilabPayQR(c *gin.Context) {
 		return
 	}
 
-	user, err := UserService.CreateKajilabPayQR(KajilabPayQRRequest.Barcode)
+	if KajilabPayQRRequest.Barcode == nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "need barcode")
+		return
+	}
+
+	user, err := UserService.CreateKajilabPayQR(*KajilabPayQRRequest.Barcode)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "fetal update user")
 		return

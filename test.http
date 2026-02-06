@@ -1,6 +1,6 @@
-@baseURL= http://localhost:8080
-#@baseURL= http://163.44.99.95:8080
-# @baseURL=https://kjlbstore-backend.kajilab.dev
+# @baseURL= http://localhost:8080
+# @baseURL= http://160.251.199.109:8080
+@baseURL=https://kjlbstore-backend.kajilab.dev
 
 ###
 Get {{baseURL}}/api/v1/products?limit=100&&offset=0&&updated_days=10
@@ -13,6 +13,9 @@ GET {{baseURL}}/api/v1/products/4901071239824
 
 ###
 Get {{baseURL}}/api/v1/products/buy/logs?year=2024&&month=10
+
+###
+Get {{baseURL}}/api/v1/products/buy/logs?limit=10
 
 ###
 Get {{baseURL}}/api/v1/products/buy/logs/user/4?limit=10&&offset=0
@@ -51,18 +54,13 @@ POST {{baseURL}}/api/v1/products/buy
 Content-Type: application/json
 
 {
-    "pay_at": "2025-02-15T23:32:37.115934+09:00",
+    "pay_at": "2026-02-03T13:55:37.115934+09:00",
     "method": "card",
-    "user_number": "1080123456788",
+    "user_number": "1088759764816",
     "products": [
         {
-            "id": 12,
+            "id": 45,
             "quantity": 1,
-            "unit_price":120
-        },
-        {
-            "id": 9,
-            "quantity": 2,
             "unit_price":120
         }
     ]

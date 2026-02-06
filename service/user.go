@@ -1,29 +1,19 @@
 package service
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
 	"strconv"
 
 	"kajilab-store-backend/model"
+	"kajilab-store-backend/utils/qrutil"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 type UserService struct{}
-
-func HMACSHA256Short(message string) string {
-	secret := os.Getenv("HASH_KEY")
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(message))
-	full := hex.EncodeToString(mac.Sum(nil))
-	return full[:16]
-}
 
 // IDからユーザ情報取得
 func (UserService) GetUserById(id int64) (model.User, error) {
@@ -337,7 +327,7 @@ func (UserService) CreateKajilabPayQR(barcode string) (model.User, error) {
 	// }
 
 	// バーコードからQRペイロードを生成
-	hashStr := HMACSHA256Short(barcode)
+	hashStr := qrutil.HMACSHA256Short(barcode)
 
 	// ユーザ情報を更新
 	user := model.User{}
