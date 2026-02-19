@@ -80,6 +80,7 @@ func SetUpServer() *gin.Engine {
 
 		// users
 		versionEngine.GET("/users/:barcode", controller.GetUserByBarcode)
+		versionEngine.GET("/users", controller.GetUsers)
 		versionEngine.POST("/users", controller.CreateUser)
 		versionEngine.PUT("/users/debt", controller.UpdateUserDebt)
 		versionEngine.PUT("/users/barcode", controller.UpdateUserBarcode)

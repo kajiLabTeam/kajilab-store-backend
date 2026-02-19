@@ -39,6 +39,50 @@ func (UserService) GetUserById(id int64) (model.User, error) {
 	return user, nil
 }
 
+func (UserService) GetAllUsers(limit int, offset int) ([]model.User, error) {
+	users := []model.User{}
+	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
+	if err != nil {
+		fmt.Println(err)
+		return users, err
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer sqlDB.Close()
+
+	// 取得
+	result := db.Limit(limit).Offset(offset).Order("updated_at DESC").Find(&users)
+	if result.Error != nil {
+		fmt.Printf("ユーザ取得失敗 %v", result.Error)
+		return users, result.Error
+	}
+	return users, nil
+}
+
+func (UserService) GetUserPayTotal(userID int64) (int64, error) {
+	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
+	if err != nil {
+		fmt.Println(err)
+		return -1, err
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer sqlDB.Close()
+
+	// 取得
+	total := int64(0)
+	err = db.Model(&model.Payment{}).Where("user_id = ?", userID).Select("COALESCE(SUM(price), 0)").Scan(&total).Error
+	if err != nil {
+		fmt.Printf("ユーザ取得失敗 %v", err)
+		return -1, err
+	}
+	return total, nil
+}
+
 // バーコードからユーザ情報取得
 func (UserService) GetUserByBarcode(barcode string) (model.User, error) {
 	user := model.User{}

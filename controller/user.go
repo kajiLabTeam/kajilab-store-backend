@@ -3,14 +3,62 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"kajilab-store-backend/model"
 	"kajilab-store-backend/service"
+	"kajilab-store-backend/utils/barcodeutil"
 	"kajilab-store-backend/utils/qrutil"
 
 	"github.com/gin-gonic/gin"
 )
+
+func GetUsers(c *gin.Context) {
+	UserService := service.UserService{}
+
+	// limitとoffsetの取得
+	limit, err := strconv.ParseInt(c.Query("limit"), 10, 64)
+	if err != nil {
+		limit = 30
+	}
+	offset, err := strconv.ParseInt(c.Query("offset"), 10, 64)
+	if err != nil {
+		offset = 0
+	}
+
+	// ユーザ情報を取得
+	users, err := UserService.GetAllUsers(int(limit), int(offset))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "fetal get users")
+		return
+	}
+
+	// レスポンスの型に変換
+	tmpUsers := []model.UsersGetResponseUser{}
+	for _, user := range users {
+		// 総使用額を取得
+		totalPay, err := UserService.GetUserPayTotal(int64(user.ID))
+		if err != nil {
+			totalPay = -1
+		}
+		tmpUsers = append(tmpUsers, model.UsersGetResponseUser{
+			Name:             user.Name,
+			CreatedAt:        user.CreatedAt,
+			UpdatedAt:        user.UpdatedAt,
+			Barcode:          barcodeutil.MaskBarcode(user.Barcode),
+			BalanceQRPayload: user.BalanceQrPayload,
+			Debt:             int64(user.Debt),
+			TotalPay:         totalPay,
+		})
+	}
+	usersRespose := model.UsersGetResponse{
+		Users:      tmpUsers,
+		TotalCount: int64(len(tmpUsers)),
+	}
+
+	c.JSON(http.StatusOK, usersRespose)
+}
 
 // バーコードからユーザ取得API
 func GetUserByBarcode(c *gin.Context) {
