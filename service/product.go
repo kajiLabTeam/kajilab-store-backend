@@ -297,60 +297,127 @@ func (ProductService) GetArrivalById(id int64) (model.Arrival, error) {
 func (ProductService) GetProductsValuesByDay(day int64) ([]int64, error) {
 	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
+
 	sqlDB, err := db.DB()
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 	defer sqlDB.Close()
 
 	valuesByDay := make([]int64, 0)
-	// 現在の商品価値総額を取得
+
+	// 現在の商品価値
 	currentProductsValue := int64(0)
-	products := make([]model.Product, 0)
-	// result := db.Order("name").Find(&products)
-	result := db.Find(&products)
-	if result.Error != nil {
-		fmt.Printf("商品取得失敗 %v", result.Error)
-		return nil, result.Error
-	}
-	for _, product := range products {
-		currentProductsValue += product.Price * product.Stock
+	var products []model.Product
+
+	if err := db.Find(&products).Error; err != nil {
+		return nil, err
 	}
 
-	// 商品価値履歴を取得
+	for _, p := range products {
+		currentProductsValue += p.Price * p.Stock
+	}
+
+	// 必要な期間のログを一括取得
+	start := time.Now().AddDate(0, 0, -int(day))
+
+	var logs []model.ProductLog
+	if err := db.Where("created_at >= ?", start).
+		Order("created_at desc").
+		Find(&logs).Error; err != nil {
+		return nil, err
+	}
+
+	// 日付ごとにまとめる
+	logMap := map[string][]model.ProductLog{}
+	for _, l := range logs {
+		key := l.CreatedAt.Format("2006-01-02")
+		logMap[key] = append(logMap[key], l)
+	}
+
 	for i := 0; i <= int(day); i++ {
-		productLogs := make([]model.ProductLog, 0)
 		dayAgo := time.Now().AddDate(0, 0, -i)
-		startOfDay := time.Date(dayAgo.Year(), dayAgo.Month(), dayAgo.Day(), 0, 0, 0, 0, dayAgo.Location())
-		endOfDay := time.Date(dayAgo.Year(), dayAgo.Month(), dayAgo.Day(), 23, 59, 59, 999999, dayAgo.Location())
-		// 一日分のログを取得
-		result = db.Where("created_at BETWEEN ? AND ?", startOfDay, endOfDay).Find(&productLogs)
+		key := dayAgo.Format("2006-01-02")
+
 		valuesByDay = append(valuesByDay, currentProductsValue)
-		if result.Error != nil {
-			// その日のログがない場合次のループにいく
-			continue
-		}
-		// 一日分のログの商品価値情報をvaluesByDayに追加
-		for _, productLog := range productLogs {
-			if productLog.SourceId >= 200000000000 {
-				// 入荷の場合
-				currentProductsValue -= productLog.UnitPrice * productLog.Quantity
-			} else {
-				// 購入の場合
-				currentProductsValue += productLog.UnitPrice * productLog.Quantity
+
+		if logs, ok := logMap[key]; ok {
+			for _, log := range logs {
+				if log.SourceId >= 200000000000 {
+					// 入荷
+					currentProductsValue -= log.UnitPrice * log.Quantity
+				} else {
+					// 購入
+					currentProductsValue += log.UnitPrice * log.Quantity
+				}
 			}
 		}
 	}
 
-	// 逆順にする
-	for j := 0; j < len(valuesByDay)/2; j++ {
-		valuesByDay[j], valuesByDay[len(valuesByDay)-j-1] = valuesByDay[len(valuesByDay)-j-1], valuesByDay[j]
+	// 逆順
+	for i, j := 0, len(valuesByDay)-1; i < j; i, j = i+1, j-1 {
+		valuesByDay[i], valuesByDay[j] = valuesByDay[j], valuesByDay[i]
 	}
 
 	return valuesByDay, nil
+	// db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return nil, err
+	// }
+	// sqlDB, err := db.DB()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// defer sqlDB.Close()
+
+	// valuesByDay := make([]int64, 0)
+	// // 現在の商品価値総額を取得
+	// currentProductsValue := int64(0)
+	// products := make([]model.Product, 0)
+	// // result := db.Order("name").Find(&products)
+	// result := db.Find(&products)
+	// if result.Error != nil {
+	// 	fmt.Printf("商品取得失敗 %v", result.Error)
+	// 	return nil, result.Error
+	// }
+	// for _, product := range products {
+	// 	currentProductsValue += product.Price * product.Stock
+	// }
+
+	// // 商品価値履歴を取得
+	// for i := 0; i <= int(day); i++ {
+	// 	productLogs := make([]model.ProductLog, 0)
+	// 	dayAgo := time.Now().AddDate(0, 0, -i)
+	// 	startOfDay := time.Date(dayAgo.Year(), dayAgo.Month(), dayAgo.Day(), 0, 0, 0, 0, dayAgo.Location())
+	// 	endOfDay := time.Date(dayAgo.Year(), dayAgo.Month(), dayAgo.Day(), 23, 59, 59, 999999, dayAgo.Location())
+	// 	// 一日分のログを取得
+	// 	result = db.Where("created_at BETWEEN ? AND ?", startOfDay, endOfDay).Find(&productLogs)
+	// 	valuesByDay = append(valuesByDay, currentProductsValue)
+	// 	if result.Error != nil {
+	// 		// その日のログがない場合次のループにいく
+	// 		continue
+	// 	}
+	// 	// 一日分のログの商品価値情報をvaluesByDayに追加
+	// 	for _, productLog := range productLogs {
+	// 		if productLog.SourceId >= 200000000000 {
+	// 			// 入荷の場合
+	// 			currentProductsValue -= productLog.UnitPrice * productLog.Quantity
+	// 		} else {
+	// 			// 購入の場合
+	// 			currentProductsValue += productLog.UnitPrice * productLog.Quantity
+	// 		}
+	// 	}
+	// }
+
+	// // 逆順にする
+	// for j := 0; j < len(valuesByDay)/2; j++ {
+	// 	valuesByDay[j], valuesByDay[len(valuesByDay)-j-1] = valuesByDay[len(valuesByDay)-j-1], valuesByDay[j]
+	// }
+
+	// return valuesByDay, nil
 }
 
 // 商品情報を登録

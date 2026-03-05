@@ -2,11 +2,12 @@ package controller
 
 import (
 	"fmt"
-	"kajilab-store-backend/model"
-	"kajilab-store-backend/service"
 	"net/http"
 	"strconv"
 	"time"
+
+	"kajilab-store-backend/model"
+	"kajilab-store-backend/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,14 +25,13 @@ func GetAsset(c *gin.Context) {
 	// データベースの予算情報をレスポンスの型へ変換
 	jsonAsset := model.AssetGetResponse{
 		Money: asset.Money,
-		Debt: asset.Debt,
+		Debt:  asset.Debt,
 	}
 
 	c.JSON(http.StatusOK, jsonAsset)
 }
 
 func GetAssetHistory(c *gin.Context) {
-
 	day, err := strconv.ParseInt(c.Query("day"), 10, 64)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "day is not number")
@@ -46,7 +46,7 @@ func GetAssetHistory(c *gin.Context) {
 	ProductService := service.ProductService{}
 
 	// DBから予算情報を取得
-	dayMargin := int64(30)	// day日前に予算情報がない場合用のマージン(少なくともdayの前30日間で一つは予算情報があるはず)
+	dayMargin := int64(30) // day日前に予算情報がない場合用のマージン(少なくともdayの前30日間で一つは予算情報があるはず)
 	assets, err := AssetService.GetAssetHistory(day + dayMargin)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "fetal get assets from DB")
@@ -67,15 +67,15 @@ func GetAssetHistory(c *gin.Context) {
 	i := 0
 	for _, asset := range assets {
 		currentDate := time.Now().AddDate(0, 0, 0-(int(day+dayMargin)-i))
-		if(asset.Money != -1){
+		if asset.Money != -1 {
 			// お金情報がない日
 			latestMoney = asset.Money
 			latestDebt = asset.Debt
 		}
 		resAssets = append(resAssets, model.AssetHistoryGetResponse{
-			Date: currentDate,
-			Money: latestMoney,
-			Debt: latestDebt,
+			Date:    currentDate,
+			Money:   latestMoney,
+			Debt:    latestDebt,
 			Product: productsValues[i],
 		})
 		i++
@@ -106,7 +106,7 @@ func UpdateAsset(c *gin.Context) {
 	// リクエストの財産情報をデータベースの型へ変換
 	asset := model.Asset{
 		Money: AssetUpdateRequest.Money,
-		Debt: totalDebt,
+		Debt:  totalDebt,
 	}
 	// DBへ保存
 	err = AssetService.UpdateAsset(&asset)

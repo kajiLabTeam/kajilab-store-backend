@@ -72,38 +72,85 @@ func (AssetService) GetAsset() (model.Asset, error) {
 func (AssetService) GetAssetHistory(day int64) ([]model.Asset, error) {
 	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
 	if err != nil {
-		fmt.Println(err)
-		return []model.Asset{}, err
+		return nil, err
 	}
+
 	sqlDB, err := db.DB()
 	if err != nil {
-		fmt.Println(err)
-		return []model.Asset{}, err
+		return nil, err
 	}
 	defer sqlDB.Close()
 
+	start := time.Now().AddDate(0, 0, -int(day))
+
+	var records []model.Asset
+	err = db.Where("created_at >= ?", start).Order("created_at asc").Find(&records).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 日付ごとの最新データをmapに保存
+	assetMap := map[string]model.Asset{}
+	for _, r := range records {
+		key := r.CreatedAt.Format("2006-01-02")
+		assetMap[key] = r
+	}
+
 	assets := make([]model.Asset, 0)
-	// 現在の予算をDBから取得
+
 	for i := 0; i <= int(day); i++ {
-		asset := model.Asset{}
-		dayAgo := time.Now().AddDate(0, 0, 0-(int(day)-i))
-		startOfDay := time.Date(dayAgo.Year(), dayAgo.Month(), dayAgo.Day(), 0, 0, 0, 0, dayAgo.Location())
-		endOfDay := time.Date(dayAgo.Year(), dayAgo.Month(), dayAgo.Day(), 23, 59, 59, 999999, dayAgo.Location())
-		result := db.Where("created_at BETWEEN ? AND ?", startOfDay, endOfDay).Last(&asset)
-		if result.Error != nil {
-			assets = append(assets, model.Asset{
-				Money: -1,
-				Debt:  -1,
-			})
-		} else {
+		targetDay := time.Now().AddDate(0, 0, -(int(day) - i))
+		key := targetDay.Format("2006-01-02")
+
+		if asset, ok := assetMap[key]; ok {
 			assets = append(assets, model.Asset{
 				Money: asset.Money,
 				Debt:  asset.Debt,
+			})
+		} else {
+			assets = append(assets, model.Asset{
+				Money: -1,
+				Debt:  -1,
 			})
 		}
 	}
 
 	return assets, nil
+
+	// db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return []model.Asset{}, err
+	// }
+	// sqlDB, err := db.DB()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return []model.Asset{}, err
+	// }
+	// defer sqlDB.Close()
+
+	// assets := make([]model.Asset, 0)
+	// // 現在の予算をDBから取得
+	// for i := 0; i <= int(day); i++ {
+	// 	asset := model.Asset{}
+	// 	dayAgo := time.Now().AddDate(0, 0, 0-(int(day)-i))
+	// 	startOfDay := time.Date(dayAgo.Year(), dayAgo.Month(), dayAgo.Day(), 0, 0, 0, 0, dayAgo.Location())
+	// 	endOfDay := time.Date(dayAgo.Year(), dayAgo.Month(), dayAgo.Day(), 23, 59, 59, 999999, dayAgo.Location())
+	// 	result := db.Where("created_at BETWEEN ? AND ?", startOfDay, endOfDay).Last(&asset)
+	// 	if result.Error != nil {
+	// 		assets = append(assets, model.Asset{
+	// 			Money: -1,
+	// 			Debt:  -1,
+	// 		})
+	// 	} else {
+	// 		assets = append(assets, model.Asset{
+	// 			Money: asset.Money,
+	// 			Debt:  asset.Debt,
+	// 		})
+	// 	}
+	// }
+
+	// return assets, nil
 }
 
 // 財産を更新する
