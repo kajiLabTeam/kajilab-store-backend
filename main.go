@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -17,6 +18,7 @@ import (
 
 func main() {
 	// 環境変数の設定
+	godotenv.Load(".env")
 	os.Setenv("DB_FILE_NAME", "kajilabstore.db")
 	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "secrets/kajilab-store-256c6c01f9cb.json")
 
@@ -38,8 +40,6 @@ func main() {
 
 func SetUpServer() *gin.Engine {
 	engine := gin.Default()
-	// ミドルウェア
-	// engine.Use(middleware.RecordUaAndTime)
 	// CRUD 書籍
 	engine.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"},
@@ -51,10 +51,15 @@ func SetUpServer() *gin.Engine {
 			"Content-Length",
 			"Accept-Encoding",
 			"Authorization",
+			"X-API-KEY",
 		},
 		AllowCredentials: true,
 		MaxAge:           24 * time.Hour,
 	}))
+
+	// ミドルウェア
+	// トークンの検証やAPIキーの検証
+	// engine.Use(middleware.AuthCheck())
 
 	versionEngine := engine.Group("api/v1")
 	{
