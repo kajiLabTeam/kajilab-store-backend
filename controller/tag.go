@@ -36,7 +36,7 @@ func GetTags(c *gin.Context) {
 }
 
 // タグ登録API
-func CreateTag(c *gin.Context){
+func CreateTag(c *gin.Context) {
 	TagService := service.TagService{}
 	TagCreateRequest := model.TagPostRequest{}
 	err := c.Bind(&TagCreateRequest)
@@ -50,7 +50,7 @@ func CreateTag(c *gin.Context){
 		Name: TagCreateRequest.Tag.Name,
 	}
 
-	err = TagService.CreateTag(&tag)
+	_, err = TagService.CreateTag(&tag)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "fetal create tag")
 		return

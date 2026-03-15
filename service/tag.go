@@ -10,11 +10,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type TagService struct{
+type TagService struct {
 }
 
 // 全てのタグを取得する
-func (TagService) GetTags() ([]model.Tag, error){
+func (TagService) GetTags() ([]model.Tag, error) {
 	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
 	if err != nil {
 		fmt.Println(err)
@@ -38,7 +38,7 @@ func (TagService) GetTags() ([]model.Tag, error){
 }
 
 // タグIDからタグ情報を取得
-func (TagService) GetTagById(id int64) (*model.Tag, error){
+func (TagService) GetTagById(id int64) (*model.Tag, error) {
 	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
 	if err != nil {
 		fmt.Println(err)
@@ -62,7 +62,7 @@ func (TagService) GetTagById(id int64) (*model.Tag, error){
 }
 
 // タグ名からタグ情報を取得
-func (TagService) GetTagByName(name string) (*model.Tag, error){
+func (TagService) GetTagByName(name string) (*model.Tag, error) {
 	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
 	if err != nil {
 		fmt.Println(err)
@@ -86,11 +86,12 @@ func (TagService) GetTagByName(name string) (*model.Tag, error){
 }
 
 // タグ情報を登録
-func (TagService) CreateTag(tag *model.Tag) error {
+func (TagService) CreateTag(tag *model.Tag) (*model.Tag, error) {
+	outTag := model.Tag{}
 	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_FILE_NAME")), &gorm.Config{})
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return &outTag, err
 	}
 	sqlDB, err := db.DB()
 	if err != nil {
@@ -104,15 +105,15 @@ func (TagService) CreateTag(tag *model.Tag) error {
 	result := q.Where("name = ?", tag.Name).First(&existTag)
 	if result.Error == nil {
 		err := errors.New("the barcode is existing")
-		fmt.Printf("%v",err)
-		return err
+		fmt.Printf("%v", err)
+		return &outTag, err
 	}
 
-	// 商品をDBへ登録
+	// タグをDBへ登録
 	result = q.Create(tag)
 	if result.Error != nil {
 		fmt.Printf("タグ登録失敗 %v", result.Error)
-		return result.Error
+		return &outTag, result.Error
 	}
-	return nil
+	return tag, nil
 }
