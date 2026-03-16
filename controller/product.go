@@ -408,7 +408,7 @@ func CreateProduct(c *gin.Context) {
 		Barcode:   ProductCreateRequest.Barcode,
 		Price:     ProductCreateRequest.Price,
 		Stock:     0,
-		TagId:     ProductCreateRequest.TagId,
+		TagId:     -1,
 		ImagePath: strconv.Itoa(int(ProductCreateRequest.Barcode)) + ".jpg",
 	}
 
@@ -422,8 +422,12 @@ func CreateProduct(c *gin.Context) {
 	for _, reqTag := range ProductCreateRequest.Tags {
 		tag, err := TagService.GetTagByName(reqTag.Name)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, "fetal register tag")
-			return
+			newTag := model.Tag{Name: reqTag.Name}
+			tag, err = TagService.CreateTag(&newTag)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, "fetal register tag")
+				return
+			}
 		}
 
 		tagMap = model.TagMap{
@@ -703,8 +707,12 @@ func UpdateProduct(c *gin.Context) {
 			// タグ名からタグの取得
 			tmpTag, err := TagService.GetTagByName(*tagMap.Name)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusBadRequest, "fetal get tag")
-				return
+				newTag := model.Tag{Name: *tagMap.Name}
+				tmpTag, err = TagService.CreateTag(&newTag)
+				if err != nil {
+					c.AbortWithStatusJSON(http.StatusBadRequest, "fetal register tag")
+					return
+				}
 			}
 			// タグマップの登録
 			_, err = TagMapService.CreateTagMap(&model.TagMap{ProductID: ProductUpdateRequest.Id, TagID: int64(tmpTag.ID)})
