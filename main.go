@@ -103,6 +103,10 @@ func SetUpServer() *gin.Engine {
 		// sale
 		versionEngine.GET("/sales", controller.GetMonthSales)
 
+		// images
+		versionEngine.POST("/images/products/:imgFileName", controller.UploadProductImage)
+
+		// storage
 		versionEngine.GET("/storage", controller.GetStorage)
 	}
 
