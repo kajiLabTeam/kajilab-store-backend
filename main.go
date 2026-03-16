@@ -58,11 +58,14 @@ func SetUpServer() *gin.Engine {
 		MaxAge:           24 * time.Hour,
 	}))
 
+	// -------- 認証不要 --------
+	engine.GET("/images/products/:path", controller.GetProductImage)
+
+	// -------- 認証必要 --------
 	// ミドルウェア
 	// トークンの検証やAPIキーの検証
-	engine.Use(middleware.AuthCheck())
-
-	versionEngine := engine.Group("api/v1")
+	versionEngine := engine.Group("/api/v1")
+	versionEngine.Use(middleware.AuthCheck())
 	{
 		// products
 		versionEngine.GET("/products", controller.GetAllProducts)
@@ -101,9 +104,6 @@ func SetUpServer() *gin.Engine {
 		versionEngine.GET("/sales", controller.GetMonthSales)
 
 		versionEngine.GET("/storage", controller.GetStorage)
-
-		// versionEngine.GET("/products/:product_id", controller.GetProductByProductId)
-
 	}
 
 	return engine
