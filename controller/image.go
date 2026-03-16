@@ -13,6 +13,7 @@ func GetProductImage(c *gin.Context) {
 	fmt.Println(reqPath)
 
 	path := "./images/products/" + reqPath
+	c.Header("Cache-Control", "no-store")
 
 	c.File(path)
 }
