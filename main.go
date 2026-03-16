@@ -6,6 +6,7 @@ import (
 	"time"
 
 	controller "kajilab-store-backend/controller"
+	"kajilab-store-backend/middleware"
 	"kajilab-store-backend/model"
 
 	"github.com/gin-contrib/cors"
@@ -59,7 +60,7 @@ func SetUpServer() *gin.Engine {
 
 	// ミドルウェア
 	// トークンの検証やAPIキーの検証
-	// engine.Use(middleware.AuthCheck())
+	engine.Use(middleware.AuthCheck())
 
 	versionEngine := engine.Group("api/v1")
 	{
