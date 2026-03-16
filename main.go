@@ -59,12 +59,7 @@ func SetUpServer() *gin.Engine {
 	}))
 
 	// -------- 認証不要 --------
-	images := engine.Group("/images")
-	images.Use(func(c *gin.Context) {
-		c.Header("Cache-Control", "no-store")
-		c.Next()
-	})
-	images.Static("/products", "./images/products")
+	engine.GET("/images/products/:path", controller.GetProductImage)
 
 	// -------- 認証必要 --------
 	// ミドルウェア
