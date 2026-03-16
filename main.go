@@ -59,7 +59,7 @@ func SetUpServer() *gin.Engine {
 	}))
 
 	// -------- 認証不要 --------
-	engine.Static("/images/products", "./images/products")
+	engine.GET("/images/products/:path", controller.GetProductImage)
 
 	// -------- 認証必要 --------
 	// ミドルウェア
