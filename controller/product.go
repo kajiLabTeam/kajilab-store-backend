@@ -891,13 +891,3 @@ func DeleteArrival(c *gin.Context) {
 
 	c.JSON(http.StatusOK, "success")
 }
-
-// 商品画像の取得
-func GetProductImage(c *gin.Context) {
-	reqPath := c.Param("path")
-	fmt.Println(reqPath)
-
-	path := "./images/products/" + reqPath
-
-	c.File(path)
-}
