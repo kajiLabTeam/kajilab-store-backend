@@ -142,6 +142,10 @@ func UpdateUserDebt(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "request is not correct")
 		return
 	}
+	if UserUpdateDebtRequest.Content == nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "content is need")
+		return
+	}
 
 	// 変更前のユーザ
 	beforeUser, err := UserService.GetUserById(UserUpdateDebtRequest.Id)
@@ -163,7 +167,7 @@ func UpdateUserDebt(c *gin.Context) {
 	}
 
 	// 「変更後のユーザの残高　-　変更前のユーザの残高」を商店Debtに足す
-	err = UserService.IncreaseKajilabpayDebt(int64(beforeUser.ID), -1, UserUpdateDebtRequest.Debt-beforeUser.Debt, "チャージ")
+	err = UserService.IncreaseKajilabpayDebt(int64(beforeUser.ID), -1, UserUpdateDebtRequest.Debt-beforeUser.Debt, *UserUpdateDebtRequest.Content)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "fetal decrease user debt")
 		return
@@ -189,9 +193,9 @@ func UpdateUserBarcode(c *gin.Context) {
 	}
 
 	user := model.User{
-		Name:    "",                               // 変更しない
-		Debt:    0,                                // 変更しない
-		Barcode: UserUpdateBarcodeRequest.Barcode, // 変更しない
+		Name:    "", // 変更しない
+		Debt:    0,  // 変更しない
+		Barcode: UserUpdateBarcodeRequest.Barcode,
 	}
 
 	err = UserService.UpdateUser(UserUpdateBarcodeRequest.Id, &user)

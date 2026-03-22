@@ -137,8 +137,9 @@ type UserGetResponse struct {
 }
 
 type UserUpdateDebtRequest struct {
-	Id   int64 `json:"id"`
-	Debt int64 `json:"debt"`
+	Id      int64   `json:"id"`
+	Debt    int64   `json:"debt"`
+	Content *string `json:"content"`
 }
 
 type UserUpdateBarcodeRequest struct {
